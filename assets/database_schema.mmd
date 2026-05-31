@@ -1,0 +1,38 @@
+erDiagram
+    EVENTS {
+        int id PK
+        string event_id UK
+        string store_id
+        string camera_id
+        string visitor_id
+        string event_type
+        datetime timestamp
+        string zone_id
+        int dwell_ms
+        boolean is_staff
+        float confidence
+        json metadata
+    }
+
+    SESSIONS {
+        int id PK
+        string session_id UK
+        string store_id
+        string visitor_id
+        datetime started_at
+        datetime ended_at
+        boolean converted
+        boolean is_staff
+        json zones_visited
+        boolean queue_joined
+        boolean purchased
+    }
+
+    METRICS {
+        int id PK
+        string store_id
+        datetime computed_at
+        json payload
+    }
+
+    EVENTS ||--o{ SESSIONS : "updates via ingestion"

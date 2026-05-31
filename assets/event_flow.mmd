@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Outside
+    Outside --> Inside: ENTRY / REENTRY
+    Inside --> ZoneA: ZONE_ENTER
+    ZoneA --> ZoneA: ZONE_DWELL every 30s
+    ZoneA --> ZoneB: ZONE_EXIT + ZONE_ENTER
+    ZoneB --> BillingQueue: BILLING_QUEUE_JOIN
+    BillingQueue --> Purchased: POS within 5 min
+    BillingQueue --> Abandoned: BILLING_QUEUE_ABANDON
+    Inside --> Outside: EXIT
+    note right of Inside
+        is_staff=true events
+        excluded from visitor metrics
+    end note

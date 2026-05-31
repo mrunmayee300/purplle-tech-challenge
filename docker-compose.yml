@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: store-intelligence-db
+    environment:
+      POSTGRES_USER: store
+      POSTGRES_PASSWORD: store
+      POSTGRES_DB: store_intel
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store -d store_intel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: store-intelligence-api
+    environment:
+      DATABASE_URL: postgresql+psycopg2://store:store@db:5432/store_intel
+      DATASET_ROOT: /data
+      VIDEO_DIR: /data/videos
+      LAYOUT_PATH: /data/store_layout.json
+      POS_PATH: /data/pos_transactions.csv
+      DEMO_MODE: "1"
+      BOOTSTRAP_ON_START: "1"
+      RUN_PIPELINE_ON_START: ${RUN_PIPELINE_ON_START:-0}
+      FRAME_STRIDE: "5"
+      MAX_FRAMES_PER_VIDEO: "90"
+    volumes:
+      - ../dataset:/data
+      - ../CCTV Footage:/data/videos:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; r=httpx.get('http://127.0.0.1:8000/health',timeout=5); assert r.status_code==200 and r.json().get('database')=='up'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 8
+      start_period: 45s
+
+  dashboard:
+    build: .
+    container_name: store-intelligence-dashboard
+    environment:
+      SERVICE: dashboard
+      API_BASE_URL: http://api:8000
+      STORE_ID: ST1008
+      DASHBOARD_REFRESH_SECONDS: "30"
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pg_data:

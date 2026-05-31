@@ -1,0 +1,30 @@
+flowchart TB
+    subgraph Edge["Edge / Batch Inference"]
+        V1[CAM 1 Entry]
+        V2[CAM 2 Makeup]
+        V3[CAM 3 Skincare]
+        V4[CAM 4 Billing]
+        V5[CAM 5 Exit]
+    end
+
+    V1 & V2 & V3 & V4 & V5 --> YOLO[YOLOv8n Person Detection]
+    YOLO --> BT[ByteTrack Multi-Object Tracking]
+    BT --> ZM[Zone Mapper + Virtual Lines]
+    BT --> ST[Staff Detector]
+    BT --> RE[Re-ID Engine]
+    ZM & ST & RE --> EM[Event Emitter]
+    EM --> BUS[Event Bus]
+    BUS --> JSONL[(generated_events.jsonl)]
+    BUS --> API_INGEST[POST /events/ingest]
+
+    subgraph Platform["Store Intelligence Platform"]
+        API_INGEST --> DB[(PostgreSQL / SQLite)]
+        DB --> MET[Metrics Service]
+        DB --> FUN[Funnel Service]
+        DB --> HEAT[Heatmap Service]
+        DB --> ANO[Anomaly Service]
+        MET & FUN & HEAT & ANO --> REST[FastAPI REST]
+        REST --> DASH[Streamlit Dashboard]
+    end
+
+    POS[pos_transactions.csv] --> MET
